@@ -11,7 +11,7 @@ def getFaceBox(net, frame, conf_threshold=0.7):
 
     net.setInput(blob)
     detections = net.forward()
-    bboxes = []
+    faceboxes = []
     for i in range(detections.shape[2]):
         confidence = detections[0,0,i,2]
         if confidence > conf_threshold:
@@ -19,12 +19,12 @@ def getFaceBox(net, frame, conf_threshold=0.7):
             y1 = int(detections[0,0,i,4] * frameHeight)
             x2 = int(detections[0,0,i,5] * frameWidth)
             y2 = int(detections[0,0,i,6] * frameHeight)
-            bboxes.append([x1,y1,x2,y2])
+            faceboxes.append([x1,y1,x2,y2])
             cv.rectangle(frameOpencvDnn, (x1,y1),(x2,y2),(0,225,0), int(round(frameHeight/150)),8)
-        return frameOpencvDnn, bboxes
+        return frameOpencvDnn, faceboxes
 
-parser = argparse.ArgumentParser(description='Use this script to detect the age and gender')
-parser.add_argument('--input',help='path to input image or video file')
+parser = argparse.ArgumentParser()
+parser.add_argument('--image')
 
 args = parser.parse_args()
 
@@ -35,47 +35,43 @@ ageProto = "age_deploy.prototxt"
 ageModel = "age_net.caffemodel"
 
 genderProto = "gender_deploy.prototxt"
-genderModel = "gender_net.caffmodel"
+genderModel = "gender_net.caffemodel"
 
-model_mean_values = (78.4263377603, 87.7689143744, 114.895847746)
+MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
 ageList = ['(0-2)','(4-6)','(8-12)','(15-20)','(25-32)','(38-43)','(48-53)','(60-100)']
 genderList = ['Male', 'Female']
 
 # Load Network
+faceNet = cv.dnn.readNet(faceModel, faceProto)
 ageNet = cv.dnn.readNet(ageModel, ageProto)
 genderNet = cv.dnn.readNet(genderModel, genderProto)
-faceNet = cv.dnn.readNet(faceModel, faceProto)
+
 
 #open a video file or an image file or a camera stream
-cap = cv.VideoCapture(0)
-padding = 8
+video = cv.VideoCapture(1)
+padding = 20
 while cv.waitKey(1) <0:
-    #read frame
-    t = time.time()
-    hasFrame, frame = cap.read()
+    hasFrame, frame = video.read()
     if not hasFrame:
         cv.waitKey()
         break
 
-    frameFace, bboxes = getFaceBox(faceNet, frame)
-    if not bboxes:
+    frameFace, faceboxes = getFaceBox(faceNet, frame)
+    if not faceboxes:
         print(" No Face Detected!")
     
-    for bbox in bboxes:
-        face = frame[max(0, bbox[1]-padding):min(bbox[3]+padding, frame.shape[0]-1), max(0,bbox[0]-padding):min(bbox[2]+padding, frame.shapep[1]-1)]
-        blob = cv.dnn.blobFromImage(face, 1.0, (277,277), model_mean_values, swapRB=False)
+    for facebox in faceboxes:
+        face = frame[max(0, facebox[1]-padding):min(facebox[3]+padding, frame.shape[0]-1), max(0,facebox[0]-padding):min(facebox[2]+padding, frame.shapep[1]-1)]
+        blob = cv.dnn.blobFromImage(face, 1.0, (277,277), MODEL_MEAN_VALUES, swapRB=False)
         genderNet.setInput(blob)
         genderPreds = genderNet.forward()
         gender = genderList[genderPreds[0].argmax()]
-        print("Gender : {}, conf = {:.3f}".format(gender, genderPreds[0].max()))
+        print(f'Gender : {gender}')
 
         ageNet.setInput(blob)
         agePredes = ageNet.forward()
         age = ageList[agePredes[0].argmax()]
-        print("Age Output : {}".format(agePredes))
-        print("Age : {}, conf = {:.3f}".format(age, agePredes[0].max()))
+        print(f"Age : {age[1:-1]} years")
 
-        label = "{},{}".format(gender, age)
-        cv.putText(frameFace, label, (bbox[0], bbox[1]-10), cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2, cv.LINE_AA)
-        cv.imshow("Age Gender Demo", frameFace)
-        print("time : {:.3f}".format(time.time()-t))
+        cv.putText(frameFace,f'{gender},{age}',(facebox[0], facebox[1]-10), cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2, cv.LINE_AA)
+        cv.imshow("Decting age and gender", frameFace)
