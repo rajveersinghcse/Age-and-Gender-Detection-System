@@ -1,9 +1,3 @@
-# https://youtu.be/NJpS-sFGLng
-"""
-Convert keras trained h5 model to tflite for deployment onto edge devices. 
-
-"""
-
 import tensorflow as tf
 import keras
 from keras.models import load_model
