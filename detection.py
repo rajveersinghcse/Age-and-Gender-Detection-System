@@ -1,89 +1,83 @@
-import cv2 as cv
-import math
-import argparse
+import cv2
+import numpy as np
 
-""" Identification """
-
-faceProto = "opencv_face_detector.pbtxt"
-faceModel = "opencv_face_detector_uint8.pb"
-
-ageProto = "age_deploy.prototxt"
-ageModel = "age_net.caffemodel"
-
-genderProto = "gender_deploy.prototxt"
-genderModel = "gender_net.caffemodel"
-
-faceNet=cv.dnn.readNet(faceModel, faceProto)
-ageNet=cv.dnn.readNet(ageModel,ageProto)
-genderNet=cv.dnn.readNet(genderModel,genderProto)
-
+# Constants
+FACE_PROTO = "opencv_face_detector.pbtxt"
+FACE_MODEL = "opencv_face_detector_uint8.pb"
+AGE_PROTO = "age_deploy.prototxt"
+AGE_MODEL = "age_net.caffemodel"
+GENDER_PROTO = "gender_deploy.prototxt"
+GENDER_MODEL = "gender_net.caffemodel"
 MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
-ageList = ['(0-2)', '(2-6)', '(6-12)', '(12-20)', '(20-32)', '(32-43)', '(43-53)', '(53-100)']
-genderList = ['Male', 'Female']
-padding=20
+AGE_LIST = ['(0-2)', '(4-6)', '(8-12)', '(15-20)', '(25-32)', '(38-43)', '(48-53)', '(60-100)']
+GENDER_LIST = ['Male', 'Female']
+CONFIDENCE_THRESHOLD = 0.9
 
-""" Face highliting """
+# Load pre-trained models
+face_net = cv2.dnn.readNet(FACE_MODEL, FACE_PROTO)
+age_net = cv2.dnn.readNet(AGE_MODEL, AGE_PROTO)
+gender_net = cv2.dnn.readNet(GENDER_MODEL, GENDER_PROTO)
 
-def faceBox(faceNet, frames):
-    frameHeight=frames.shape[0]
-    frameWidth=frames.shape[1]
-    blob=cv.dnn.blobFromImage(frames, 1.0, (300,300), [104,117,123], swapRB=False)
-    faceNet.setInput(blob)
-    detection=faceNet.forward()
-    bboxs=[]
-    for i in range(detection.shape[2]):
-        confidence=detection[0,0,i,2]
-        if confidence>0.7:
-            x1=int(detection[0,0,i,3]*frameWidth)
-            y1=int(detection[0,0,i,4]*frameHeight)
-            x2=int(detection[0,0,i,5]*frameWidth)
-            y2=int(detection[0,0,i,6]*frameHeight)
-            bboxs.append([x1,y1,x2,y2])
-            cv.rectangle(frames, (x1,y1),(x2,y2),(0,255,0), 1)
-    return frames, bboxs
+def detect_age_gender(face):
+    # Preprocess the face image for age and gender prediction
+    blob = cv2.dnn.blobFromImage(face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
 
-""" Video display """
+    # Age prediction
+    age_net.setInput(blob)
+    age_preds = age_net.forward()
+    age = AGE_LIST[age_preds[0].argmax()]
 
-def DisplayVid():
-    cap = cv.VideoCapture(0, cv.CAP_DSHOW)
-    fourcc = cv.VideoWriter_fourcc(*'XVID')
-    out = cv.VideoWriter('testvideo', fourcc, 20.0, (640, 480))
+    # Gender prediction
+    gender_net.setInput(blob)
+    gender_preds = gender_net.forward()
+    gender = GENDER_LIST[gender_preds[0].argmax()]
 
-    cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
+    return age, gender
 
-    while (True):
+def main():
+    # Open a video capture stream
+    cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 700)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 700)
+    if not cap.isOpened():
+        print("Error: Could not open camera.")
+        return
+
+    while True:
         ret, frame = cap.read()
-        frameFace, bboxes = faceBox(faceNet, frame)
-        gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        out.write(frame)
 
-        for bbox in bboxes:
-            face = frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]
-
-            blob = cv.dnn.blobFromImage(face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
-            genderNet.setInput(blob)
-            genderPreds = genderNet.forward()
-            gender = genderList[genderPreds[0].argmax()]
-
-            ageNet.setInput(blob)
-            agePreds = ageNet.forward()
-            age = ageList[agePreds[0].argmax()]
-
-            label = "{},{}".format(gender, age)
-            cv.rectangle(frameFace, (bbox[0], bbox[1] - 30), (bbox[2], bbox[1]), (0, 255, 0), -1)
-            cv.putText(frameFace, label, (bbox[0], bbox[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2,
-                        cv.LINE_AA)
-        cv.imshow("Age-Gender", frameFace)
-        k = cv.waitKey(1)
-        if cv.waitKey(1) & 0xFF == ord('q'):
+        if not ret:
             break
 
-        if not (cap.isOpened()):
-            print("Could not open video device")
+        # Perform face detection
+        blob = cv2.dnn.blobFromImage(frame, 1.0, (300, 300), [104, 117, 123], swapRB=False)
+        face_net.setInput(blob)
+        detections = face_net.forward()
+
+        for i in range(detections.shape[2]):
+            confidence = detections[0, 0, i, 2]
+
+            if confidence > CONFIDENCE_THRESHOLD:
+                x1 = int(detections[0, 0, i, 3] * frame.shape[1])
+                y1 = int(detections[0, 0, i, 4] * frame.shape[0])
+                x2 = int(detections[0, 0, i, 5] * frame.shape[1])
+                y2 = int(detections[0, 0, i, 6] * frame.shape[0])
+
+                face = frame[y1:y2, x1:x2]
+
+                age, gender = detect_age_gender(face)
+
+                label = f"Gender:{gender}, Age:{age}"
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
+        cv2.imshow('Age and Gender Detection', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
     cap.release()
-    out.release()
-    cv.destroyAllWindows()
+    cv2.destroyAllWindows()
 
-DisplayVid()
+if __name__ == "__main__":
+    main()
