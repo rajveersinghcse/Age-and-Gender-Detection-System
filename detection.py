@@ -1,6 +1,4 @@
 import cv2 as cv
-import math
-import argparse
 
 """ Identification """
 
@@ -18,8 +16,9 @@ ageNet=cv.dnn.readNet(ageModel,ageProto)
 genderNet=cv.dnn.readNet(genderModel,genderProto)
 
 MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
-ageList = ['(0-2)', '(2-6)', '(6-12)', '(12-20)', '(20-32)', '(32-43)', '(43-53)', '(53-100)']
+ageList = ['(0-2)', '(4-6)', '(8-12)', '(15-20)', '(25-32)', '(38-43)', '(48-53)', '(60-100)']
 genderList = ['Male', 'Female']
+confidence_threshold = 0.9
 padding=20
 
 """ Face highliting """
@@ -33,7 +32,7 @@ def faceBox(faceNet, frames):
     bboxs=[]
     for i in range(detection.shape[2]):
         confidence=detection[0,0,i,2]
-        if confidence>0.7:
+        if confidence>confidence_threshold:
             x1=int(detection[0,0,i,3]*frameWidth)
             y1=int(detection[0,0,i,4]*frameHeight)
             x2=int(detection[0,0,i,5]*frameWidth)
@@ -48,9 +47,6 @@ def DisplayVid():
     cap = cv.VideoCapture(0, cv.CAP_DSHOW)
     fourcc = cv.VideoWriter_fourcc(*'XVID')
     out = cv.VideoWriter('testvideo', fourcc, 20.0, (640, 480))
-
-    cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
 
     while (True):
         ret, frame = cap.read()
