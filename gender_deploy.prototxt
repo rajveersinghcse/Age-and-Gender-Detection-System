@@ -1,6 +1,6 @@
 name: "CaffeNet"
 input: "data"
-input_dim: 1
+input_dim: 10
 input_dim: 3
 input_dim: 227
 input_dim: 227
@@ -164,7 +164,7 @@ layers {
   bottom: "fc7"
   top: "fc8"
   inner_product_param {
-    num_output: 8
+    num_output: 2
   }
 }
 layers {

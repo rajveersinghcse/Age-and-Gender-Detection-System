@@ -1221,7 +1221,7 @@ node {
   attr {
     key: "padding"
     value {
-      s: "VALID"
+      s: "SAME"
     }
   }
   attr {
@@ -1311,7 +1311,7 @@ node {
   attr {
     key: "padding"
     value {
-      s: "VALID"
+      s: "SAME"
     }
   }
   attr {
@@ -2335,12 +2335,6 @@ node {
     key: "top_k"
     value {
       i: 400
-    }
-  }
-  attr {
-    key: "clip"
-    value {
-      b: true
     }
   }
 }
