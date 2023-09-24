@@ -2,14 +2,14 @@ import cv2 as cv
 
 """ Identification """
 
-faceProto = "opencv_face_detector.pbtxt"
-faceModel = "opencv_face_detector_uint8.pb"
+faceProto = "/models/opencv_face_detector.pbtxt"
+faceModel = "/models/opencv_face_detector_uint8.pb"
 
-ageProto = "age_deploy.prototxt"
-ageModel = "age_net.caffemodel"
+ageProto = "/models/age_deploy.prototxt"
+ageModel = "/models/age_net.caffemodel"
 
-genderProto = "gender_deploy.prototxt"
-genderModel = "gender_net.caffemodel"
+genderProto = "/models/gender_deploy.prototxt"
+genderModel = "/models/gender_net.caffemodel"
 
 faceNet=cv.dnn.readNet(faceModel, faceProto)
 ageNet=cv.dnn.readNet(ageModel,ageProto)
