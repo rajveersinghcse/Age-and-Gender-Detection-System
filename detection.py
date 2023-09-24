@@ -11,7 +11,7 @@ GENDER_MODEL = "gender_net.caffemodel"
 MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
 AGE_LIST = ['(0-2)', '(4-6)', '(8-12)', '(15-20)', '(25-32)', '(38-43)', '(48-53)', '(60-100)']
 GENDER_LIST = ['Male', 'Female']
-CONFIDENCE_THRESHOLD = 0.9
+CONFIDENCE_THRESHOLD = 0.7
 
 # Load pre-trained models
 face_net = cv2.dnn.readNet(FACE_MODEL, FACE_PROTO)
@@ -67,7 +67,7 @@ def main():
 
                 age, gender = detect_age_gender(face)
 
-                label = f"Gender:{gender}, Age:{age}"
+                label = f"{gender},{age}"
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
