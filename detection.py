@@ -2,12 +2,12 @@ import cv2
 import numpy as np
 
 # Constants
-FACE_PROTO = "opencv_face_detector.pbtxt"
-FACE_MODEL = "opencv_face_detector_uint8.pb"
-AGE_PROTO = "age_deploy.prototxt"
-AGE_MODEL = "age_net.caffemodel"
-GENDER_PROTO = "gender_deploy.prototxt"
-GENDER_MODEL = "gender_net.caffemodel"
+FACE_PROTO = "constants/opencv_face_detector.pbtxt"
+FACE_MODEL = "constants/opencv_face_detector_uint8.pb"
+AGE_PROTO = "constants/age_deploy.prototxt"
+AGE_MODEL = "constants/age_net.caffemodel"
+GENDER_PROTO = "constants/gender_deploy.prototxt"
+GENDER_MODEL = "constants/gender_net.caffemodel"
 MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
 AGE_LIST = ['(0-2)', '(4-6)', '(8-12)', '(15-20)', '(25-32)', '(38-43)', '(48-53)', '(60-100)']
 GENDER_LIST = ['Male', 'Female']
