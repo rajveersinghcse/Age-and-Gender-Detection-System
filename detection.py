@@ -45,7 +45,6 @@ def getFaceBox(net, frame, conf_threshold=0.7):
             cv.rectangle(frameOpencvDnn, (x1, y1), (x2, y2), (0, 255, 0), int(round(frameHeight/150)), 8)
     return frameOpencvDnn, bboxes
 
-
 # Device Handling
 if args.device == "cpu":
     cv.dnn.DNN_TARGET_CPU
