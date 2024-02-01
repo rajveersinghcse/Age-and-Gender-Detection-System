@@ -1,5 +1,6 @@
-import cv2
-import numpy as np
+import cv2 as cv
+import time
+import argparse
 
 # Constants
 FACE_PROTO = "constants/opencv_face_detector.pbtxt"
@@ -9,75 +10,86 @@ AGE_MODEL = "constants/age_net.caffemodel"
 GENDER_PROTO = "constants/gender_deploy.prototxt"
 GENDER_MODEL = "constants/gender_net.caffemodel"
 MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
-AGE_LIST = ['(0-2)', '(4-6)', '(8-12)', '(15-20)', '(25-32)', '(38-43)', '(48-53)', '(60-100)']
-GENDER_LIST = ['Male', 'Female']
-CONFIDENCE_THRESHOLD = 0.7
+AGELIST = ['(0-2)', '(4-6)', '(8-12)', '(15-20)', '(25-32)', '(38-43)', '(48-53)', '(60-100)']
+GENDERLIST = ['Male', 'Female']
 
-# Load pre-trained models
-face_net = cv2.dnn.readNet(FACE_MODEL, FACE_PROTO)
-age_net = cv2.dnn.readNet(AGE_MODEL, AGE_PROTO)
-gender_net = cv2.dnn.readNet(GENDER_MODEL, GENDER_PROTO)
+# Argument Parsing
+parser = argparse.ArgumentParser(description='Use this script to run age and gender recognition using OpenCV.')
+parser.add_argument('--input', help='Path to input image or video file. Skip this argument to capture frames from a camera.')
+parser.add_argument("--device", default="cpu", help="Device to inference on")
+args = parser.parse_args()
 
-def detect_age_gender(face):
-    # Preprocess the face image for age and gender prediction
-    blob = cv2.dnn.blobFromImage(face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
+# Load Networks
+face_net = cv.dnn.readNetFromTensorflow(FACE_MODEL, FACE_PROTO)
+age_net = cv.dnn.readNet(AGE_MODEL, AGE_PROTO)
+gender_net = cv.dnn.readNet(GENDER_MODEL, GENDER_PROTO)
 
-    # Age prediction
-    age_net.setInput(blob)
-    age_preds = age_net.forward()
-    age = AGE_LIST[age_preds[0].argmax()]
+# Function to get face bounding box
+def getFaceBox(net, frame, conf_threshold=0.7):
+    frameOpencvDnn = frame.copy()
+    frameHeight = frameOpencvDnn.shape[0]
+    frameWidth = frameOpencvDnn.shape[1]
+    blob = cv.dnn.blobFromImage(frameOpencvDnn, 1.0, (300, 300), [104, 117, 123], True, False)
 
-    # Gender prediction
-    gender_net.setInput(blob)
-    gender_preds = gender_net.forward()
-    gender = GENDER_LIST[gender_preds[0].argmax()]
+    net.setInput(blob)
+    detections = net.forward()
+    bboxes = []
+    for i in range(detections.shape[2]):
+        confidence = detections[0, 0, i, 2]
+        if confidence > conf_threshold:
+            x1 = int(detections[0, 0, i, 3] * frameWidth)
+            y1 = int(detections[0, 0, i, 4] * frameHeight)
+            x2 = int(detections[0, 0, i, 5] * frameWidth)
+            y2 = int(detections[0, 0, i, 6] * frameHeight)
+            bboxes.append([x1, y1, x2, y2])
+            cv.rectangle(frameOpencvDnn, (x1, y1), (x2, y2), (0, 255, 0), int(round(frameHeight/150)), 8)
+    return frameOpencvDnn, bboxes
 
-    return age, gender
 
-def main():
-    # Open a video capture stream
-    cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 700)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 700)
-    if not cap.isOpened():
-        print("Error: Could not open camera.")
-        return
+# Device Handling
+if args.device == "cpu":
+    cv.dnn.DNN_TARGET_CPU
 
-    while True:
-        ret, frame = cap.read()
+elif args.device == "gpu":
+    cv.dnn.DNN_BACKEND_CUDA
+    cv.dnn.DNN_TARGET_CUDA
 
-        if not ret:
-            break
+# Open a video file or an image file or a camera stream
+cap = cv.VideoCapture(args.input if args.input else 0)
+padding = 20
 
-        # Perform face detection
-        blob = cv2.dnn.blobFromImage(frame, 1.0, (300, 300), [104, 117, 123], swapRB=False)
-        face_net.setInput(blob)
-        detections = face_net.forward()
+while cv.waitKey(1) < 0:
+    # Read frame
+    t = time.time()
+    hasFrame, frame = cap.read()
+    if not hasFrame:
+        cv.waitKey()
+        break
 
-        for i in range(detections.shape[2]):
-            confidence = detections[0, 0, i, 2]
+    frameFace, bboxes = getFaceBox(face_net, frame)
+    if not bboxes:
+        print("No face Detected, Checking next frame")
+        continue
 
-            if confidence > CONFIDENCE_THRESHOLD:
-                x1 = int(detections[0, 0, i, 3] * frame.shape[1])
-                y1 = int(detections[0, 0, i, 4] * frame.shape[0])
-                x2 = int(detections[0, 0, i, 5] * frame.shape[1])
-                y2 = int(detections[0, 0, i, 6] * frame.shape[0])
+    for bbox in bboxes:
+        face = frame[max(0, bbox[1] - padding):min(bbox[3] + padding, frame.shape[0] - 1),
+               max(0, bbox[0] - padding):min(bbox[2] + padding, frame.shape[1] - 1)]
 
-                face = frame[y1:y2, x1:x2]
+        # Resize face for age and gender prediction
+        face = cv.resize(face, (227, 227))
 
-                age, gender = detect_age_gender(face)
+        blob = cv.dnn.blobFromImage(face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
 
-                label = f"{gender},{age}"
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+        # Gender Prediction
+        gender_net.setInput(blob)
+        gender_preds = gender_net.forward()
+        gender = GENDERLIST[gender_preds[0].argmax()]
 
-        cv2.imshow('Age and Gender Detection', frame)
+        # Age Prediction
+        age_net.setInput(blob)
+        age_preds = age_net.forward()
+        age = AGELIST[age_preds[0].argmax()]
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
-
-if __name__ == "__main__":
-    main()
+        label = "{},{}".format(gender, age)
+        cv.putText(frameFace, label, (bbox[0], bbox[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2, cv.LINE_AA)
+        cv.imshow("Age Gender Demo", frameFace)
