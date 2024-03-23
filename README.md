@@ -1,6 +1,6 @@
 # Age and Gender Detection System
 ## Overview
-The Age and Gender Detection System is a computer vision project designed to automatically estimate the age and gender of individuals from images or video streams. Leveraging state-of-the-art deep learning techniques and pre-trained models, this system can quickly and accurately identify age groups and genders of subjects in real-time or in batch processing mode.
+The Age and Gender Detection System is a computer vision project designed to automatically estimate the age and gender of individuals from images or video streams. Leveraging state-of-the-art deep learning techniques and pre-trained models, this system can quickly and accurately identify subjects' age groups and genders in real-time or batch-processing mode.
 
 ## Features
 - <b>Age Estimation:</b> Utilizes advanced deep learning models to predict the approximate age of individuals in images or video frames.
@@ -12,9 +12,9 @@ The Age and Gender Detection System is a computer vision project designed to aut
 
 ## Technologies Used
 - <b>Python:</b> The primary programming language used for development.
-- <b>OpenCV:</b> A popular computer vision library utilized for image and video processing tasks.
-- <b>TensorFlow/Keras:</b> Deep learning frameworks used for training and deploying age and gender detection models.
-- <b>Pre-trained Models:</b> Utilizes pre-trained neural network models such as ResNet, VGG, or MobileNet for feature extraction and classification tasks.
+- <b>OpenCV:</b> A popular computer vision library for image and video processing tasks.
+- <b>Opencv:</b> OpenCV (Open Source Computer Vision Library) is an open-source computer vision and machine learning software library. 
+- <b>ArgumentParser:</b> It provides an easy way to parse command-line arguments, generate usage messages, and handle errors related to command-line input.
 
 ## Usage
 - <b>Installation:</b> Clone the repository and install dependencies using pip install -r requirements.txt.
