@@ -1,12 +1,3 @@
-pandas
-seaborn
-scikit-learn
-tensorflow
-keras
-matplotlib
-yfinance
-plotly
-tqdm
-streamlit
-nbformat
+opencv-python
+argparse
 -e .
