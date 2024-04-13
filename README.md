@@ -1,6 +1,3 @@
-Certainly! Here's a README.md file for your Age and Gender Detection System project on GitHub:
-
-```markdown
 # Age and Gender Detection System
 
 This project utilizes OpenCV and deep learning models to detect and classify the age and gender of faces in images or video streams. It provides a real-time demonstration of age and gender recognition capabilities using pre-trained models.
@@ -17,7 +14,7 @@ This project utilizes OpenCV and deep learning models to detect and classify the
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/your_username/age-gender-detection.git
+git clone https://github.com/rajveersinghcse/Age-and-Gender-Detection-System.git
 ```
 
 2. Install the required packages:
@@ -26,7 +23,7 @@ git clone https://github.com/your_username/age-gender-detection.git
 pip install -r requirements.txt
 ```
 
-3. Download the necessary model files (`*.pb`, `*.prototxt`, `*.caffemodel`) and place them in the `constants/` directory as specified in the code.
+3. The necessary model files (`*.pb`, `*.prototxt`, `*.caffemodel`) are already included in the `constants/` directory. You don't need to download them separately.
 
 ## Usage
 
@@ -48,6 +45,5 @@ This project is based on the OpenCV library and utilizes pre-trained deep learni
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-```
 
-Feel free to modify the sections or add more details as needed!
+Feel free to customize any part of this README.md file to better suit your project's details or style!
